@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Shopper - Admin Management Console</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 2rem; }
+        .container { max-width: 950px; margin: auto; }
+        .card { background: #1e293b; padding: 30px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid #334155; }
+        h2 { color: #f8fafc; margin-top: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+        hr { border: 0; border-top: 1px solid #334155; margin-bottom: 20px; }
+        label { display: block; font-size: 13px; font-weight: 520; color: #94a3b8; margin-bottom: 6px; }
+        input, textarea, select { width: 100%; padding: 10px 14px; margin-bottom: 16px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 6px; box-sizing: border-box; font-size: 14px; outline: none; }
+        input:focus, textarea:focus, select:focus { border-color: #4484f1; }
+        button { width: 100%; padding: 11px; background: #4484f1; border: none; color: white; font-weight: 600; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        button:hover { background: #3367d6; }
+        
+        .shopper-box { background: #162238; padding: 20px; border-radius: 10px; margin-bottom: 18px; border: 1px solid #334155; }
+        .task-item { background: #0f172a; padding: 15px; border-radius: 8px; margin-top: 12px; border: 1px solid #334155; position: relative; }
+        .task-item.completed { border-left: 5px solid #4ade80; background: #132219; }
+        .task-item.pending { border-left: 5px solid #60a5fa; }
+        
+        .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-bottom: 8px; }
+        .badge.completed { background: #1c4532; color: #4ade80; }
+        .badge.pending { background: #1e3a8a; color: #93c5fd; }
+        
+        .images-preview-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .preview-thumb-box { width: 70px; height: 70px; border-radius: 6px; overflow: hidden; border: 1px solid #334155; background: #0f172a; }
+        .preview-thumb-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #94a3b8; text-decoration: none; font-size: 13px; }
+        .back-link:hover { color: #fff; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2><i class="fas fa-tasks" style="color: #4484f1;"></i> Assign Individual Mystery Shop Task</h2>
+            <hr>
+            <form id="assignment-form">
+                <label>Select Specific Shopper</label>
+                <select id="shopper-select" required>
+                    <option value="">-- Choose Registered Shopper --</option>
+                </select>
+                
+                <label>Store Name / Location</label>
+                <input type="text" id="store-name" placeholder="e.g., Target Store #402" required>
+                
+                <label>Specific Task Instructions</label>
+                <textarea id="instructions" rows="3" placeholder="Detail what this specific shopper needs to evaluate..." required></textarea>
+                
+                <button type="submit"><i class="fas fa-paper-plane"></i> Assign Task to Selected Shopper</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-users" style="color: #4484f1;"></i> All Shoppers & Individual Task Status</h2>
+            <hr>
+            <div id="shoppers-list">Loading shoppers...</div>
+        </div>
+
+        <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Return to Login / Home</a>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+
+    <script>
+        let allShoppers = [];
+
+        db.collection("users").onSnapshot((snapshot) => {
+            const select = document.getElementById('shopper-select');
+            select.innerHTML = '<option value="">-- Choose Registered Shopper --</option>';
+            
+            let listHtml = "";
+            allShoppers = [];
+
+            snapshot.forEach((doc) => {
+                const user = doc.data();
+                allShoppers.push(user);
+
+                let opt = document.createElement('option');
+                opt.value = user.uid;
+                opt.innerText = `${user.name} (${user.email}) - UID: ${user.uid.substring(0,8)}...`;
+                select.appendChild(opt);
+
+                let tasks = user.tasks || [];
+                let tasksHtml = "";
+                
+                if (tasks.length === 0) {
+                    tasksHtml = `<div style="font-size:13px; color:#94a3b8; font-style:italic; margin-top:5px;">No specific tasks assigned to this shopper yet.</div>`;
+                } else {
+                    tasks.forEach((task) => {
+                        const isCompleted = task.status === "Completed" || task.status === "Review Submitted";
+                        const itemClass = isCompleted ? "completed" : "pending";
+                        const badgeClass = isCompleted ? "completed" : "pending";
+                        const badgeText = isCompleted ? "Completed ✓" : "Active Assignment";
+
+                        let imagesHtml = "";
+                        let imagesList = task.receiptImages || (task.receiptData ? [task.receiptData] : []);
+                        imagesList.forEach(imgSrc => {
+                            imagesHtml += `<div class="preview-thumb-box"><a href="${imgSrc}" target="_blank"><img src="${imgSrc}"></a></div>`;
+                        });
+
+                        tasksHtml += `
+                            <div class="task-item ${itemClass}">
+                                <span class="badge ${badgeClass}">${badgeText}</span>
+                                <div style="font-size:14px; margin-top:4px;"><strong>Store:</strong> ${task.storeName || "N/A"}</div>
+                                <div style="font-size:13px; color:#cbd5e1; margin-top:2px;"><strong>Instructions:</strong> ${task.assignedTask || "N/A"}</div>
+                                <div style="font-size:13px; color:#cbd5e1; margin-top:2px;"><strong>Review Report:</strong> ${task.review || "Pending shopper submission..."}</div>
+                                ${imagesList.length > 0 ? `<div style="margin-top:10px;"><div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">Uploaded Evidence Files / Receipts:</div><div class="images-preview-grid">${imagesHtml}</div></div>` : ''}
+                            </div>
+                        `;
+                    });
+                }
+
+                listHtml += `
+                    <div class="shopper-box">
+                        <div style="font-size:15px; font-weight:600; color:#f8fafc;">👤 ${user.name} (${user.email})</div>
+                        <div style="font-size:12px; color:#94a3b8; margin-top:2px;">Shopper UID: <code>${user.uid}</code> | City: ${user.city || 'N/A'}, ${user.state || 'N/A'}</div>
+                        <div style="margin-top:12px;">${tasksHtml}</div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('shoppers-list').innerHTML = listHtml || "<p>No shoppers registered yet.</p>";
+        });
+
+        document.getElementById('assignment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const shopperUid = document.getElementById('shopper-select').value;
+            const storeName = document.getElementById('store-name').value.trim();
+            const instructions = document.getElementById('instructions').value.trim();
+
+            if (!shopperUid) {
+                alert("Please select a specific shopper.");
+                return;
+            }
+
+            try {
+                const docRef = db.collection("users").doc(shopperUid);
+                const docSnap = await docRef.get();
+                if (docSnap.exists) {
+                    let userData = docSnap.data();
+                    let tasks = userData.tasks || [];
+
+                    const newTask = {
+                        id: 'task_' + Date.now(),
+                        storeName: storeName,
+                        assignedTask: instructions,
+                        status: "Pending",
+                        review: "",
+                        receiptImages: []
+                    };
+
+                    tasks.push(newTask);
+
+                    await docRef.update({ tasks: tasks });
+                    alert("Task successfully assigned to the selected shopper!");
+                    notifyTelegram(`📋 *Secret Shopper - New Task Assigned*\n\n*Shopper:* ${userData.name}\n*UID:* \`${shopperUid}\`\n*Store:* ${storeName}`);
+                    document.getElementById('assignment-form').reset();
+                }
+            } catch (error) {
+                alert("Error assigning task: " + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

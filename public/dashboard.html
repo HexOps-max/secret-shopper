@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Evaluator Dashboard - Secret Shopper®</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-blue: #002e5b;
+            --secondary-blue: #001f3f;
+            --accent-blue: #4484f1;
+            --accent-green: #2e7d32;
+            --bg-light: #f1f4f8;
+            --text-main: #1e293b;
+            --text-muted: #475569;
+            --border-color: #e2e8f0;
+            --sidebar-width: 260px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-light); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
+
+        aside {
+            width: var(--sidebar-width); background-color: var(--primary-blue); color: white;
+            position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; display: flex; flex-direction: column; transition: transform 0.3s ease;
+        }
+
+        .sidebar-brand { padding: 20px; display: flex; align-items: center; justify-content: center; background-color: var(--secondary-blue); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-brand img { height: 38px; width: auto; }
+
+        .sidebar-menu { list-style: none; padding: 20px 0; flex: 1; overflow-y: auto; }
+        .sidebar-menu li a {
+            display: flex; align-items: center; gap: 12px; padding: 14px 24px; color: #cbd5e1; text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.2s ease; border-left: 4px solid transparent;
+        }
+        .sidebar-menu li.active a, .sidebar-menu li a:hover { color: white; background-color: rgba(255,255,255,0.08); border-left-color: var(--accent-blue); }
+        .sidebar-menu li a i { width: 20px; text-align: center; font-size: 16px; }
+
+        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; color: #94a3b8; text-align: center; }
+
+        .main-content-wrapper { flex: 1; margin-left: var(--sidebar-width); display: flex; flex-direction: column; min-height: 100vh; }
+
+        header { background-color: #ffffff; padding: 0 30px; display: flex; align-items: center; justify-content: space-between; height: 70px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 90; }
+        .mobile-menu-toggle { display: none; background: none; border: none; font-size: 20px; color: var(--primary-blue); cursor: pointer; }
+
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .user-profile-menu { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 40px; height: 40px; background: var(--accent-blue); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; }
+        .user-meta .name { font-size: 14px; font-weight: 600; color: var(--text-main); }
+        .user-meta .role { font-size: 12px; color: var(--text-muted); }
+
+        .dashboard-body { padding: 30px; flex: 1; }
+        .page-header-title { margin-bottom: 25px; }
+        .page-header-title h1 { font-size: 24px; color: var(--primary-blue); font-weight: 700; margin-bottom: 5px; }
+        .page-header-title p { font-size: 14px; color: var(--text-muted); }
+
+        .content-panel { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); border: 1px solid var(--border-color); margin-bottom: 30px; }
+        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); }
+        .panel-header h2 { font-size: 16px; color: var(--primary-blue); font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge.active { background: rgba(46, 125, 50, 0.1); color: var(--accent-green); }
+        .badge.submitted { background: rgba(68, 132, 241, 0.1); color: var(--accent-blue); }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+        .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: #fff; color: var(--text-main); }
+        .form-control:focus { outline: none; border-color: var(--accent-blue); }
+
+        .btn-action { background-color: var(--primary-blue); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-action:hover { background-color: var(--secondary-blue); }
+
+        .tab-view { display: none; }
+        .tab-view.active-view { display: block; }
+
+        @media (max-width: 900px) {
+            aside { transform: translateX(-100%); }
+            aside.mobile-open { transform: translateX(0); }
+            .main-content-wrapper { margin-left: 0; }
+            .mobile-menu-toggle { display: block; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside id="sidebarNav">
+        <div class="sidebar-brand">
+            <img src="assets/logo1.png" alt="Secret Shopper®">
+        </div>
+        <ul class="sidebar-menu">
+            <li class="active" data-target="dashboard-view">
+                <a href="#" onclick="switchTab('dashboard-view', this)"><i class="fas fa-home"></i> Dashboard</a>
+            </li>
+            <li data-target="assignments-view">
+                <a href="#" onclick="switchTab('assignments-view', this)"><i class="fas fa-clipboard-list"></i> Field Assignments</a>
+            </li>
+            <li>
+                <a href="#" onclick="auth.signOut().then(() => window.location.href='index.html')"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+            </li>
+        </ul>
+        <div class="sidebar-footer"><p>© 2026 Secret Shopper®</p></div>
+    </aside>
+
+    <div class="main-content-wrapper">
+        <header>
+            <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()"><i class="fas fa-bars"></i></button>
+            <div style="font-weight: 600; color: var(--primary-blue); font-size: 15px;">Evaluator Portal</div>
+            <div class="header-right">
+                <div class="user-profile-menu">
+                    <div class="user-avatar" id="nav-user-initial">...</div>
+                    <div class="user-meta">
+                        <div class="name" id="nav-user-name">Loading...</div>
+                        <div class="role">Verified Evaluator</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-body">
+            <!-- DASHBOARD TAB -->
+            <div id="dashboard-view" class="tab-view active-view">
+                <div class="page-header-title">
+                    <h1 id="banner-greeting">Welcome back, Evaluator</h1>
+                    <p>Overview of your assigned store tasks and active audits.</p>
+                </div>
+
+                <div class="content-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-clipboard-check" style="color: var(--accent-blue);"></i> Assigned Evaluation Task</h2>
+                        <span id="dashboard-task-badge" class="badge active">Assigned</span>
+                    </div>
+                    <div id="dashboard-task-content">
+                        <p style="font-size: 14px; color: var(--text-muted);">Loading task details...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FIELD ASSIGNMENTS & UPLOAD TAB -->
+            <div id="assignments-view" class="tab-view">
+                <div class="page-header-title">
+                    <h1>Field Assignments & Task Submission</h1>
+                    <p>Upload up to 3 images directly from your device and submit your notes.</p>
+                </div>
+
+                <div class="content-panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-tasks" style="color: var(--accent-blue);"></i> Current Assignment</h2>
+                        <span id="assignment-badge-status" class="badge active">Assigned</span>
+                    </div>
+
+                    <div id="assigned-task-details-box" style="background: #f8fafc; border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <h3 id="task-title-display" style="font-size: 16px; color: var(--primary-blue); margin-bottom: 10px;">Loading Task...</h3>
+                        <p id="task-desc-display" style="font-size: 14px; color: var(--text-muted); line-height: 1.6;"></p>
+                    </div>
+
+                    <div id="task-upload-container">
+                        <h3 style="font-size: 15px; color: var(--primary-blue); margin-bottom: 15px;"><i class="fas fa-camera"></i> Upload Proof of Visit (Max 3 Images)</h3>
+                        <form id="taskSubmissionForm" onsubmit="submitTaskReport(event)">
+                            <div class="form-group">
+                                <label>Evaluation Findings / Summary Notes</label>
+                                <textarea id="upload-notes" class="form-control" rows="4" placeholder="Enter detailed feedback..." required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Select Images from Device (Up to 3 files)</label>
+                                <input type="file" id="device-image-files" class="form-control" accept="image/*" multiple required style="padding: 8px;">
+                                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">You can select multiple photos at once (maximum 3 files).</small>
+                            </div>
+                            <button type="submit" id="submit-btn" class="btn-action"><i class="fas fa-paper-plane"></i> Submit Report & Photos</button>
+                        </form>
+                    </div>
+
+                    <div id="task-submitted-message" style="display: none; background: rgba(46, 125, 50, 0.1); border: 1px solid var(--accent-green); padding: 20px; border-radius: 8px; color: var(--accent-green); text-align: center;">
+                        <i class="fas fa-check-circle" style="font-size: 24px; margin-bottom: 8px;"></i>
+                        <h3 style="font-size: 16px; font-weight: 600;">Report Successfully Submitted</h3>
+                        <p style="font-size: 13px; color: var(--text-main); margin-top: 5px;">Your report and images have been sent to administration and Telegram.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+
+    <script>
+        function switchTab(viewId, element) {
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active-view'));
+            document.getElementById(viewId).classList.add('active-view');
+            document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
+            if (element && element.parentElement) element.parentElement.classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        function toggleMobileSidebar() {
+            document.getElementById('sidebarNav').classList.toggle('mobile-open');
+        }
+
+        // Helper to convert selected file into base64 for database storage & admin view
+        function convertFileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const userDoc = await db.collection("users").doc(user.uid).get();
+                if (userDoc.exists) {
+                    const data = userDoc.data();
+                    const fullName = data.name || user.email;
+                    const firstName = fullName.split(' ')[0];
+                    
+                    document.getElementById('nav-user-name').innerText = fullName;
+                    document.getElementById('nav-user-initial').innerText = firstName.charAt(0).toUpperCase();
+                    document.getElementById('banner-greeting').innerText = `Welcome back, ${firstName}`;
+
+                    let tasks = data.tasks || [];
+                    if (tasks.length > 0) {
+                        const latestTask = tasks[tasks.length - 1];
+                        document.getElementById('dashboard-task-content').innerHTML = `
+                            <h3 style="font-size: 15px; color: var(--primary-blue); margin-bottom: 8px;">${latestTask.storeName}</h3>
+                            <p style="font-size: 13px; color: var(--text-muted);">${latestTask.assignedTask}</p>
+                        `;
+
+                        document.getElementById('task-title-display').innerText = latestTask.storeName;
+                        document.getElementById('task-desc-display').innerText = latestTask.assignedTask;
+
+                        if (latestTask.status === "Submitted" || latestTask.status === "Completed") {
+                            document.getElementById('task-upload-container').style.display = 'none';
+                            document.getElementById('task-submitted-message').style.display = 'block';
+                            document.getElementById('assignment-badge-status').innerText = 'Submitted';
+                            document.getElementById('assignment-badge-status').className = 'badge submitted';
+                        }
+                    } else {
+                        document.getElementById('dashboard-task-content').innerHTML = `<p style="font-size: 13px; color: var(--text-muted);">No task assigned yet.</p>`;
+                        document.getElementById('task-title-display').innerText = "No Tasks Assigned";
+                        document.getElementById('task-desc-display').innerText = "Please check back later.";
+                        document.getElementById('task-upload-container').style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching user data:", err);
+            }
+        });
+
+        async function submitTaskReport(event) {
+            event.preventDefault();
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const notes = document.getElementById('upload-notes').value.trim();
+            const fileInput = document.getElementById('device-image-files');
+            
+            if (fileInput.files.length === 0) {
+                alert("Please select at least one image file from your device.");
+                return;
+            }
+
+            if (fileInput.files.length > 3) {
+                alert("You can upload a maximum of 3 images.");
+                return;
+            }
+
+            document.getElementById('submit-btn').innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing & Uploading...`;
+            document.getElementById('submit-btn').disabled = true;
+
+            try {
+                let imagesArray = [];
+                for (let i = 0; i < fileInput.files.length; i++) {
+                    const base64String = await convertFileToBase64(fileInput.files[i]);
+                    imagesArray.push(base64String);
+                }
+
+                const userRef = db.collection("users").doc(user.uid);
+                const docSnap = await userRef.get();
+                
+                if (docSnap.exists) {
+                    let userData = docSnap.data();
+                    let tasks = userData.tasks || [];
+                    
+                    if (tasks.length > 0) {
+                        tasks[tasks.length - 1].status = "Submitted";
+                        tasks[tasks.length - 1].review = notes;
+                        tasks[tasks.length - 1].receiptData = imagesArray[0] || ""; // Main view thumb
+                        tasks.push; // Safe reference
+                        tasks[tasks.length - 1].images = imagesArray; // Array of up to 3 base64 images
+
+                        await userRef.update({ tasks: tasks });
+
+                        document.getElementById('task-upload-container').style.display = 'none';
+                        document.getElementById('task-submitted-message').style.display = 'block';
+                        document.getElementById('assignment-badge-status').innerText = 'Submitted';
+                        document.getElementById('assignment-badge-status').className = 'badge submitted';
+                        
+                        // Notify Telegram
+                        if (typeof notifyTelegram === 'function') {
+                            notifyTelegram(`📋 *Secret Shopper - Report Submitted*\n\n*Shopper:* ${userData.name}\n*Store:* ${tasks[tasks.length - 1].storeName}\n*Notes:* ${notes}\n*Images Uploaded:* ${imagesArray.length}`);
+                        }
+                        
+                        alert("Report and photos successfully submitted!");
+                    }
+                }
+            } catch (err) {
+                console.error("Error submitting report:", err);
+                alert("Error processing images or submitting report. Please try smaller image sizes.");
+                document.getElementById('submit-btn').innerHTML = `<i class="fas fa-paper-plane"></i> Submit Report & Photos`;
+                document.getElementById('submit-btn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

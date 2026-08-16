@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height">
+    <title>The premiere mystery shopping company. Welcome</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        html { font-family: sans-serif; height: 100%; box-sizing: border-box; }
+        body { margin: 0; padding: 0; background-color: #f1f4f8; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; height: 100%; }
+        *, *:before, *:after { box-sizing: border-box; transition: all 0.2s ease-in-out; }
+        .top-header { background-color: #002e5b; width: 100%; height: 65px; display: flex; align-items: center; padding: 0 30px; }
+        .top-header img { height: 53px; width: auto; }
+        .login-wrapper { display: flex; justify-content: center; align-items: center; min-height: calc(100vh - 65px); padding: 20px; }
+        .login-card { background: #ffffff; width: 100%; max-width: 420px; padding: 35px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+        .logo-center { text-align: center; margin-bottom: 20px; }
+        .logo-center img { height: 50px; width: auto; }
+        .instruction-text { font-size: 13px; color: #444; line-height: 1.5; margin-bottom: 20px; font-weight: 500; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
+        .input-box-wrapper { position: relative; margin-bottom: 15px; }
+        input { width: 100%; height: 40px; padding: 5px 12px; border: 1px solid #ccc; border-left: 2px solid #a94442; border-radius: 6px; font-size: 14px; outline: none; background: #fff; }
+        input:focus { border-color: #4484f1; }
+        input.error-input { border-left-color: #eb3d3d !important; border-color: #eb3d3d !important; background-color: #fff8f8; }
+        .error-message { color: #eb3d3d; font-size: 12px; margin-top: 5px; display: none; font-weight: 500; }
+        .toggle-password { position: absolute; right: 12px; top: 11px; color: #999; cursor: pointer; font-size: 14px; }
+        .btn { width: 100%; height: 40px; border-radius: 6px; font-weight: 500; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; text-decoration: none; }
+        .btn-login { background-color: #4484f1; color: white; margin-top: 5px; width: 100px; }
+        .btn-login:hover { background-color: #3367d6; }
+        .btn-signup { background-color: #7ca8ff; color: white; margin-top: 15px; }
+        .btn-signup:hover { background-color: #6193ff; }
+        .forgot-link { display: inline-block; color: #4484f1; font-size: 13px; text-decoration: none; margin: 15px 0; }
+        .forgot-link:hover { text-decoration: underline; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
+        .help-footer { text-align: right; margin-top: 15px; }
+        .help-footer a { color: #4484f1; font-size: 13px; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <div class="top-header">
+        <img src="assets/logo1.png" alt="Secret Shopper">
+    </div>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="logo-center">
+                <img src="assets/logo2.png" alt="Secret Shopper">
+            </div>
+            
+            <div class="instruction-text">
+                Log in using your User ID or email to access your personalized shopper portal and assigned mystery shops.
+            </div>
+
+            <form id="login-form">
+                <div class="input-box-wrapper">
+                    <label>User ID or Email</label>
+                    <input type="text" id="login-email" required>
+                    <div class="error-message" id="email-error">Invalid User ID or account not found.</div>
+                </div>
+
+                <div class="input-box-wrapper">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required>
+                    <i class="fas fa-eye toggle-password" id="toggle-pwd"></i>
+                    <div class="error-message" id="password-error">Invalid password. Please try again.</div>
+                </div>
+
+                <button type="submit" class="btn btn-login" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Log In
+                </button>
+            </form>
+
+            <a href="#" class="forgot-link">Forgot Password?</a>
+            <hr>
+
+            <button type="button" class="btn btn-signup" onclick="window.location.href='signup.html'">
+                <i class="fas fa-user-plus"></i> Sign up to Shop
+            </button>
+
+            <div class="help-footer">
+                <a href="#">Help</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+    <script>
+        const togglePwd = document.getElementById('toggle-pwd');
+        const passwordInput = document.getElementById('login-password');
+        const emailInput = document.getElementById('login-email');
+        const emailError = document.getElementById('email-error');
+        const passwordError = document.getElementById('password-error');
+
+        togglePwd.addEventListener('click', function () {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.classList.toggle('fa-eye-slash');
+        });
+
+        // Clear error states on input change
+        emailInput.addEventListener('input', () => {
+            emailInput.classList.remove('error-input');
+            emailError.style.display = 'none';
+        });
+
+        passwordInput.addEventListener('input', () => {
+            passwordInput.classList.remove('error-input');
+            passwordError.style.display = 'none';
+        });
+
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const identifier = emailInput.value.trim();
+            const password = passwordInput.value;
+            const btn = document.getElementById('login-btn');
+            
+            // Reset errors
+            emailInput.classList.remove('error-input');
+            passwordInput.classList.remove('error-input');
+            emailError.style.display = 'none';
+            passwordError.style.display = 'none';
+
+            btn.innerText = "Signing in...";
+            btn.disabled = true;
+
+            if (!identifier.includes('@')) {
+                db.collection("users").doc(identifier).get().then((doc) => {
+                    if (doc.exists && doc.data().email) {
+                        signInUser(doc.data().email, password);
+                    } else {
+                        showFieldError(emailInput, emailError, "Invalid User ID or account not found.");
+                        resetButton(btn);
+                    }
+                }).catch(() => {
+                    showFieldError(emailInput, emailError, "Connection error. Please try again.");
+                    resetButton(btn);
+                });
+            } else {
+                signInUser(identifier, password);
+            }
+        });
+
+        function signInUser(email, password) {
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    window.location.href = "dashboard.html";
+                })
+                .catch((error) => {
+                    const btn = document.getElementById('login-btn');
+                    // Check if error is password/credential related
+                    if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                        showFieldError(passwordInput, passwordError, "Invalid password. Please try again.");
+                    } else if (error.code === 'auth/user-not-found') {
+                        showFieldError(emailInput, emailError, "No account found with this email.");
+                    } else {
+                        showFieldError(passwordInput, passwordError, "Invalid login credentials. Please check your details.");
+                    }
+                    resetButton(btn);
+                });
+        }
+
+        function showFieldError(inputElem, errorElem, message) {
+            inputElem.classList.add('error-input');
+            errorElem.innerText = message;
+            errorElem.style.display = 'block';
+            inputElem.focus();
+        }
+
+        function resetButton(btn) {
+            btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Log In';
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>

